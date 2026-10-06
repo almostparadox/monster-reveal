@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Monster Reveal - Liquid Hole Mask</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,6 +14,8 @@
     background: #0b0d13;
     font-family: system-ui, -apple-system, sans-serif;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: none; /* stops touch scrolling/swiping */
   }
 
   /* Full viewport container */
@@ -40,14 +42,14 @@
   /* Monster Container & 3D Pop-up */
   .monster-stage {
     position: relative;
-    width: min(85vw, 880px);
-    height: min(82vh, 680px);
+    width: min(92vw, 880px);
+    height: min(80vh, 680px);
     transform-origin: 50% 90%;
     transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.28s ease;
   }
 
   .monster-stage.pop-up {
-    transform: translateY(-30px) scale(1.08) rotateX(8deg);
+    transform: translateY(-26px) scale(1.08) rotateX(8deg);
     filter: drop-shadow(0 35px 30px rgba(0,0,0,0.6));
   }
 
@@ -66,7 +68,7 @@
     cursor: none;
   }
 
-  /* Custom Cursor Ring */
+  /* Custom Cursor Ring (desktop only) */
   #cursorRing {
     position: fixed;
     width: 28px;
@@ -80,11 +82,15 @@
     transition: width 0.2s, height 0.2s;
   }
 
+  @media (hover: none) and (pointer: coarse) {
+    #cursorRing { display: none !important; }
+  }
+
   /* Header Badge */
   .badge {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 18px;
+    left: 18px;
     z-index: 10;
     background: #000;
     border: 2px solid #fff;
@@ -93,7 +99,7 @@
     font-size: 12px;
     padding: 6px 14px;
     border-radius: 999px;
-    box-shadow: 4px 4px 0 #000;
+    box-shadow: 3px 3px 0 #000;
     pointer-events: none;
   }
 
@@ -101,11 +107,11 @@
 
   .hint-bar {
     position: absolute;
-    bottom: 20px;
+    bottom: 18px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     border: 1px solid rgba(255,255,255,0.2);
     color: #fff;
     padding: 6px 16px;
@@ -113,13 +119,40 @@
     font-size: 13px;
     font-weight: 600;
     pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Phone adaptations */
+  @media (max-width: 600px) {
+    .badge {
+      font-size: 10px;
+      padding: 4px 10px;
+      top: 12px;
+      left: 12px;
+    }
+    .hint-bar {
+      font-size: 11px;
+      padding: 5px 12px;
+      bottom: 12px;
+      white-space: normal;
+      width: max-content;
+      max-width: 90vw;
+      text-align: center;
+    }
+    .monster-stage {
+      width: 95vw;
+      height: 72vh;
+    }
+    .monster-stage.pop-up {
+      transform: translateY(-16px) scale(1.05) rotateX(6deg);
+    }
   }
 </style>
 </head>
 <body>
 
 <div class="badge"><span>◆</span> FRAMER / REVEAL YOUR MONSTERS</div>
-<div class="hint-bar">Move cursor to melt sketch • Monster pops up at bottom</div>
+<div class="hint-bar">Drag finger / cursor to melt sketch • Monster pops up at bottom</div>
 <div id="cursorRing"></div>
 
 <div id="viewport">
@@ -195,30 +228,50 @@
 
   let width = 0;
   let height = 0;
+  let isMobile = false;
 
   function resize() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
+    isMobile = width < 640;
   }
   window.addEventListener('resize', resize);
   resize();
 
-  // Mouse & Liquid Droplet Springs
+  // Mouse / Touch coords
   const mouse = { x: width / 2, y: height / 2 };
   const cursor = { x: width / 2, y: height / 2 };
 
-  // Trailing droplets: tightened for rounder shape with subtle fluid drag
+  // Trailing droplets
   const drops = [
-    { x: width / 2, y: height / 2, r: 120, lag: 0.16 },
-    { x: width / 2, y: height / 2, r: 80,  lag: 0.10 }
+    { x: width / 2, y: height / 2, r: 120, lag: 0.18 },
+    { x: width / 2, y: height / 2, r: 80,  lag: 0.12 }
   ];
 
+  function updatePointer(x, y) {
+    mouse.x = x;
+    mouse.y = y;
+    ring.style.left = `${x}px`;
+    ring.style.top  = `${y}px`;
+  }
+
+  // Desktop Mouse
   window.addEventListener('mousemove', e => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-    ring.style.left = `${e.clientX}px`;
-    ring.style.top  = `${e.clientY}px`;
+    updatePointer(e.clientX, e.clientY);
   });
+
+  // Mobile Touch Support
+  window.addEventListener('touchstart', e => {
+    if (e.touches.length > 0) {
+      updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+      updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
 
   function lerp(a, b, f) {
     return a + (b - a) * f;
@@ -309,8 +362,7 @@
     ctx.beginPath();
     for (let i = 0; i <= points; i++) {
       const angle = (i / points) * Math.PI * 2;
-      // Gentle surface tension wobble (3px max)
-      const wobble = Math.sin(angle * 5 + time * 2 + harmonicSeed) * 3.5;
+      const wobble = Math.sin(angle * 5 + time * 2 + harmonicSeed) * (isMobile ? 2.5 : 3.5);
       const r = baseRadius + wobble;
       const x = centerX + Math.cos(angle) * r;
       const y = centerY + Math.sin(angle) * r;
@@ -326,7 +378,7 @@
   function loop() {
     time += 0.035;
 
-    // Smooth cursor follow
+    // Follow input
     cursor.x = lerp(cursor.x, mouse.x, 0.22);
     cursor.y = lerp(cursor.y, mouse.y, 0.22);
 
@@ -349,7 +401,7 @@
     // Drafting grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
     ctx.lineWidth = 1;
-    const grid = 36;
+    const grid = isMobile ? 28 : 36;
     ctx.beginPath();
     for (let x = 0; x < width; x += grid) {
       ctx.moveTo(x, 0); ctx.lineTo(x, height);
@@ -359,32 +411,33 @@
     }
     ctx.stroke();
 
-    // Draw the top sketch artwork matching monster center
+    // Match monster position & aspect
     const rect = monsterStage.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const scale = Math.min(rect.width / 800, rect.height / 600);
-    drawSketchArt(cx, cy - 20, scale);
+    drawSketchArt(cx, cy - (isMobile ? 12 : 20), scale);
 
     // 2. CUT HOLE: REALTIME DESTINATION-OUT PUNCH THROUGH SKETCH
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = '#000';
 
-    // Main round hole (165px radius)
-    drawLiquidBlob(cursor.x, cursor.y, 165, time, 0);
+    // Adaptive radius for screen size (115px mobile, 165px desktop)
+    const baseHoleRadius = isMobile ? 115 : 165;
+    drawLiquidBlob(cursor.x, cursor.y, baseHoleRadius, time, 0);
 
-    // Subtle drag droplet to keep slight fluid inertia without breaking circularity
+    // Subtle drag droplets
     drops.forEach((d, idx) => {
-      drawLiquidBlob(d.x, d.y, d.r, time, idx + 1);
+      const dropRadius = isMobile ? d.r * 0.72 : d.r;
+      drawLiquidBlob(d.x, d.y, dropRadius, time, idx + 1);
 
       const p = idx === 0 ? cursor : drops[idx - 1];
       const midX = (p.x + d.x) / 2;
       const midY = (p.y + d.y) / 2;
-      drawLiquidBlob(midX, midY, d.r * 0.95, time, idx + 2);
+      drawLiquidBlob(midX, midY, dropRadius * 0.95, time, idx + 2);
     });
 
     // 3. MONSTER BOTTOM POP-UP TRIGGER
-    // When cursor hovers near lower body of monster, pop up in 3D
     const isNearBottom = (
       mouse.x >= rect.left - 40 &&
       mouse.x <= rect.right + 40 &&
