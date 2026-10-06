@@ -22,6 +22,12 @@
     position: relative;
     width: 100vw;
     height: 100vh;
+  }
+
+  /* Shared layer positioning ensures 100% pixel-perfect sync */
+  .layer {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -29,19 +35,29 @@
 
   /* LAYER 1 (BOTTOM): Full Color Monster Artwork */
   .layer-bottom {
-    position: absolute;
-    inset: 0;
     background-color: #ff334b;
     background-image: radial-gradient(#d11e33 22%, transparent 22%);
     background-size: 16px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 1;
     perspective: 1200px;
   }
 
-  /* Monster Container & 3D Pop-up */
+  /* LAYER 2 (TOP): Sketch / Drafting Layer with Circular Liquid Hole Mask */
+  .layer-top {
+    background-color: #141822;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    z-index: 2;
+    pointer-events: none;
+
+    /* Native CSS Radial Hole Mask - 100% bug-free across all devices */
+    -webkit-mask-image: radial-gradient(circle var(--hole-r, 150px) at var(--hole-x, 50vw) var(--hole-y, 50vh), transparent 0%, transparent 92%, black 100%);
+    mask-image: radial-gradient(circle var(--hole-r, 150px) at var(--hole-x, 50vw) var(--hole-y, 50vh), transparent 0%, transparent 92%, black 100%);
+  }
+
+  /* Monster Container: identical geometry on both layers */
   .monster-stage {
     position: relative;
     width: min(90vw, 800px);
@@ -51,38 +67,29 @@
     transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.28s ease;
   }
 
-  .monster-stage.pop-up {
+  /* Bottom monster pops up in 3D through the hole */
+  .layer-bottom .monster-stage.pop-up {
     transform: translateY(-28px) scale(1.08) rotateX(8deg);
-    filter: drop-shadow(0 35px 30px rgba(0,0,0,0.6));
+    filter: drop-shadow(0 35px 30px rgba(0, 0, 0, 0.6));
   }
 
-  #bottomSvg {
+  .monster-stage svg {
     width: 100%;
     height: 100%;
     display: block;
   }
 
-  /* LAYER 2 (TOP): Canvas Sketch Layer */
-  #sketchCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-    cursor: none;
-  }
-
   /* Custom Cursor Ring (desktop only) */
   #cursorRing {
     position: fixed;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border: 3px solid #fff;
     border-radius: 50%;
     pointer-events: none;
     z-index: 99;
     transform: translate(-50%, -50%);
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
     transition: width 0.2s, height 0.2s;
   }
 
@@ -115,8 +122,8 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
-    background: rgba(0,0,0,0.85);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
     padding: 6px 16px;
     border-radius: 20px;
@@ -146,7 +153,7 @@
       width: 94vw;
       max-height: 75vh;
     }
-    .monster-stage.pop-up {
+    .layer-bottom .monster-stage.pop-up {
       transform: translateY(-16px) scale(1.05) rotateX(6deg);
     }
   }
@@ -159,10 +166,10 @@
 <div id="cursorRing"></div>
 
 <div id="viewport">
-  <!-- BOTTOM LAYER: FULL COLOR MONSTER ART -->
-  <div class="layer-bottom">
-    <div class="monster-stage" id="monsterStage">
-      <svg id="bottomSvg" viewBox="0 0 800 600">
+  <!-- LAYER 1: BOTTOM FULL COLOR MONSTER ART -->
+  <div class="layer layer-bottom">
+    <div class="monster-stage" id="bottomStage">
+      <svg viewBox="0 0 800 600">
         <!-- Comic burst background -->
         <circle cx="400" cy="320" r="230" fill="#ffe600" stroke="#000" stroke-width="8"/>
         <path d="M400 320 L180 120 M400 320 L620 120 M400 320 L140 320 M400 320 L660 320 M400 320 L240 500 M400 320 L560 500" stroke="#ff8800" stroke-width="14" stroke-dasharray="16 16"/>
@@ -218,231 +225,137 @@
     </div>
   </div>
 
-  <!-- TOP LAYER: CANVASED SKETCH WITH REALTIME LIQUID HOLE CUTOUT -->
-  <canvas id="sketchCanvas"></canvas>
+  <!-- LAYER 2: TOP SKETCH LAYER (EXACT 1:1 VECTOR GEOMETRY) -->
+  <div class="layer layer-top" id="topLayer">
+    <div class="monster-stage">
+      <svg viewBox="0 0 800 600" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Drafting grid guides -->
+        <g stroke="#3b82f6" stroke-opacity="0.35" stroke-dasharray="8 8">
+          <circle cx="400" cy="320" r="230"/>
+          <line x1="400" y1="40" x2="400" y2="580"/>
+          <line x1="100" y1="320" x2="700" y2="320"/>
+          <path d="M400 320 L180 120 M400 320 L620 120 M400 320 L140 320 M400 320 L660 320 M400 320 L240 500 M400 320 L560 500"/>
+        </g>
+
+        <!-- Monster Body Wireframe -->
+        <ellipse cx="400" cy="460" rx="145" ry="115" stroke="#93c5fd" stroke-dasharray="6 6"/>
+        <ellipse cx="400" cy="470" rx="85" ry="80" stroke="#93c5fd"/>
+        <circle cx="400" cy="430" r="7" stroke="#60a5fa"/>
+        <circle cx="400" cy="468" r="7" stroke="#60a5fa"/>
+        <circle cx="400" cy="506" r="7" stroke="#60a5fa"/>
+
+        <!-- Sash & Epaulets -->
+        <path d="M315 415 Q400 520 485 495" stroke="#93c5fd" stroke-width="12"/>
+        <ellipse cx="265" cy="420" rx="35" ry="18" stroke="#60a5fa"/>
+        <ellipse cx="535" cy="420" rx="35" ry="18" stroke="#60a5fa"/>
+
+        <!-- Head & Ears -->
+        <circle cx="400" cy="270" r="110" stroke="#93c5fd" stroke-dasharray="8 4"/>
+        <polygon points="310,210 260,110 360,180" stroke="#60a5fa"/>
+        <polygon points="490,210 540,110 440,180" stroke="#60a5fa"/>
+
+        <!-- Bicorne Hat -->
+        <path d="M230 180 Q400 60 570 180 Q400 140 230 180 Z" stroke="#60a5fa" stroke-width="4"/>
+        <path d="M270 170 Q400 95 530 170" stroke="#93c5fd" stroke-dasharray="4 4"/>
+        <circle cx="400" cy="115" r="18" stroke="#60a5fa"/>
+
+        <!-- Muzzle -->
+        <ellipse cx="400" cy="300" rx="65" ry="42" stroke="#93c5fd"/>
+        <polygon points="400,280 382,295 418,295" stroke="#60a5fa"/>
+
+        <!-- Eyes Wireframe -->
+        <ellipse cx="355" cy="250" rx="26" ry="32" stroke="#60a5fa"/>
+        <ellipse cx="445" cy="250" rx="26" ry="32" stroke="#60a5fa"/>
+        <ellipse cx="355" cy="250" rx="7" ry="22" stroke="#93c5fd"/>
+        <ellipse cx="445" cy="250" rx="7" ry="22" stroke="#93c5fd"/>
+        <circle cx="348" cy="240" r="7" stroke="#93c5fd"/>
+        <circle cx="438" cy="240" r="7" stroke="#93c5fd"/>
+
+        <!-- Whiskers -->
+        <line x1="280" y1="290" x2="190" y2="280" stroke="#93c5fd"/>
+        <line x1="280" y1="310" x2="180" y2="325" stroke="#93c5fd"/>
+        <line x1="520" y1="290" x2="610" y2="280" stroke="#93c5fd"/>
+        <line x1="520" y1="310" x2="620" y2="325" stroke="#93c5fd"/>
+
+        <!-- Pipe & Smoke -->
+        <path d="M420 315 Q520 360 510 270" stroke="#93c5fd" stroke-width="6"/>
+        <rect x="490" y="230" width="38" height="46" rx="6" stroke="#60a5fa"/>
+        <circle cx="510" cy="200" r="18" stroke="#93c5fd" stroke-dasharray="4 4"/>
+        <circle cx="535" cy="165" r="26" stroke="#93c5fd" stroke-dasharray="4 4"/>
+        <circle cx="505" cy="120" r="34" stroke="#93c5fd" stroke-dasharray="4 4"/>
+      </svg>
+    </div>
+  </div>
 </div>
 
 <script>
-  /* ponytail: SVG-as-image on 2D canvas, guarantees exact 1:1 path synchronization */
-  const canvas = document.getElementById('sketchCanvas');
-  const ctx = canvas.getContext('2d');
-  const ring = document.getElementById('cursorRing');
-  const monsterStage = document.getElementById('monsterStage');
-  const bottomSvg = document.getElementById('bottomSvg');
+  /* ponytail: CSS radial mask-image, browser handles 100% vector layer alignment */
+  const topLayer    = document.getElementById('topLayer');
+  const bottomStage = document.getElementById('bottomStage');
+  const ring        = document.getElementById('cursorRing');
 
-  let width = 0;
-  let height = 0;
-  let isMobile = false;
+  let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  let pos   = { x: mouse.x, y: mouse.y };
+  let isMobile = window.innerWidth < 640;
 
-  // Exact 1:1 synchronized sketch SVG asset
-  const sketchSvgText = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Drafting grid guides -->
-      <g stroke="#3b82f6" stroke-opacity="0.35" stroke-dasharray="8 8">
-        <circle cx="400" cy="320" r="230"/>
-        <line x1="400" y1="40" x2="400" y2="580"/>
-        <line x1="100" y1="320" x2="700" y2="320"/>
-        <path d="M400 320 L180 120 M400 320 L620 120 M400 320 L140 320 M400 320 L660 320 M400 320 L240 500 M400 320 L560 500"/>
-      </g>
-
-      <!-- Monster Body Sketch -->
-      <ellipse cx="400" cy="460" rx="145" ry="115" stroke="#93c5fd" stroke-dasharray="6 6"/>
-      <ellipse cx="400" cy="470" rx="85" ry="80" stroke="#93c5fd"/>
-      <circle cx="400" cy="430" r="7" stroke="#60a5fa"/>
-      <circle cx="400" cy="468" r="7" stroke="#60a5fa"/>
-      <circle cx="400" cy="506" r="7" stroke="#60a5fa"/>
-
-      <!-- Sash & Epaulets -->
-      <path d="M315 415 Q400 520 485 495" stroke="#93c5fd" stroke-width="12"/>
-      <ellipse cx="265" cy="420" rx="35" ry="18" stroke="#60a5fa"/>
-      <ellipse cx="535" cy="420" rx="35" ry="18" stroke="#60a5fa"/>
-
-      <!-- Head & Ears -->
-      <circle cx="400" cy="270" r="110" stroke="#93c5fd" stroke-dasharray="8 4"/>
-      <polygon points="310,210 260,110 360,180" stroke="#60a5fa"/>
-      <polygon points="490,210 540,110 440,180" stroke="#60a5fa"/>
-
-      <!-- Bicorne Hat -->
-      <path d="M230 180 Q400 60 570 180 Q400 140 230 180 Z" stroke="#60a5fa" stroke-width="4"/>
-      <path d="M270 170 Q400 95 530 170" stroke="#93c5fd" stroke-dasharray="4 4"/>
-      <circle cx="400" cy="115" r="18" stroke="#60a5fa"/>
-
-      <!-- Muzzle & Face -->
-      <ellipse cx="400" cy="300" rx="65" ry="42" stroke="#93c5fd"/>
-      <polygon points="400,280 382,295 418,295" stroke="#60a5fa"/>
-
-      <!-- Eyes Wireframe -->
-      <ellipse cx="355" cy="250" rx="26" ry="32" stroke="#60a5fa"/>
-      <ellipse cx="445" cy="250" rx="26" ry="32" stroke="#60a5fa"/>
-      <ellipse cx="355" cy="250" rx="7" ry="22" stroke="#93c5fd"/>
-      <ellipse cx="445" cy="250" rx="7" ry="22" stroke="#93c5fd"/>
-      <circle cx="348" cy="240" r="7" stroke="#93c5fd"/>
-      <circle cx="438" cy="240" r="7" stroke="#93c5fd"/>
-
-      <!-- Whiskers -->
-      <line x1="280" y1="290" x2="190" y2="280" stroke="#93c5fd"/>
-      <line x1="280" y1="310" x2="180" y2="325" stroke="#93c5fd"/>
-      <line x1="520" y1="290" x2="610" y2="280" stroke="#93c5fd"/>
-      <line x1="520" y1="310" x2="620" y2="325" stroke="#93c5fd"/>
-
-      <!-- Smoking Pipe & Smoke Guides -->
-      <path d="M420 315 Q520 360 510 270" stroke="#93c5fd" stroke-width="6"/>
-      <rect x="490" y="230" width="38" height="46" rx="6" stroke="#60a5fa"/>
-      <circle cx="510" cy="200" r="18" stroke="#93c5fd" stroke-dasharray="4 4"/>
-      <circle cx="535" cy="165" r="26" stroke="#93c5fd" stroke-dasharray="4 4"/>
-      <circle cx="505" cy="120" r="34" stroke="#93c5fd" stroke-dasharray="4 4"/>
-    </svg>
-  `;
-
-  const sketchImg = new Image();
-  sketchImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(sketchSvgText);
-
-  // Cached resting bounding box of the SVG (before any hover 3D transforms)
-  let restRect = { left: 0, top: 0, width: 800, height: 600 };
-
-  function updateRestRect() {
-    // Measure without pop-up transform to guarantee resting 100% sync
-    const wasPopped = monsterStage.classList.contains('pop-up');
-    if (wasPopped) monsterStage.classList.remove('pop-up');
-    const r = bottomSvg.getBoundingClientRect();
-    restRect = { left: r.left, top: r.top, width: r.width, height: r.height };
-    if (wasPopped) monsterStage.classList.add('pop-up');
+  function onResize() {
+    isMobile = window.innerWidth < 640;
   }
+  window.addEventListener('resize', onResize);
 
-  function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-    isMobile = width < 640;
-    updateRestRect();
-  }
-  window.addEventListener('resize', resize);
-  setTimeout(resize, 50);
-
-  // Mouse / Touch coords
-  const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-  const cursor = { x: mouse.x, y: mouse.y };
-
-  // Trailing droplets
-  const drops = [
-    { x: mouse.x, y: mouse.y, r: 120, lag: 0.18 },
-    { x: mouse.x, y: mouse.y, r: 80,  lag: 0.12 }
-  ];
-
-  function updatePointer(x, y) {
+  function updateInput(x, y) {
     mouse.x = x;
     mouse.y = y;
     ring.style.left = `${x}px`;
     ring.style.top  = `${y}px`;
   }
 
-  window.addEventListener('mousemove', e => updatePointer(e.clientX, e.clientY));
+  window.addEventListener('mousemove', e => updateInput(e.clientX, e.clientY));
 
   window.addEventListener('touchstart', e => {
-    if (e.touches.length > 0) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    if (e.touches.length > 0) updateInput(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: true });
 
   window.addEventListener('touchmove', e => {
-    if (e.touches.length > 0) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    if (e.touches.length > 0) updateInput(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: false });
 
   function lerp(a, b, f) {
     return a + (b - a) * f;
   }
 
-  // Draw clean round hole with subtle liquid perimeter tension
-  function drawLiquidBlob(centerX, centerY, baseRadius, time, harmonicSeed) {
-    const points = 36;
-    ctx.beginPath();
-    for (let i = 0; i <= points; i++) {
-      const angle = (i / points) * Math.PI * 2;
-      const wobble = Math.sin(angle * 5 + time * 2 + harmonicSeed) * (isMobile ? 2.5 : 3.5);
-      const r = baseRadius + wobble;
-      const x = centerX + Math.cos(angle) * r;
-      const y = centerY + Math.sin(angle) * r;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  let time = 0;
-
   function loop() {
-    time += 0.035;
+    // Smooth fluid tracking with slight spring inertia
+    pos.x = lerp(pos.x, mouse.x, 0.20);
+    pos.y = lerp(pos.y, mouse.y, 0.20);
 
-    // Follow input
-    cursor.x = lerp(cursor.x, mouse.x, 0.22);
-    cursor.y = lerp(cursor.y, mouse.y, 0.22);
+    // Adaptive round hole radius with subtle velocity stretch
+    const baseR = isMobile ? 120 : 160;
+    const speed = Math.hypot(mouse.x - pos.x, mouse.y - pos.y);
+    const radius = baseR + Math.min(speed * 0.12, 18);
 
-    // Droplet springs trailing behind
-    let prev = cursor;
-    drops.forEach(d => {
-      d.x = lerp(d.x, prev.x, d.lag);
-      d.y = lerp(d.y, prev.y, d.lag);
-      prev = d;
-    });
+    // Apply native CSS mask directly to top layer
+    topLayer.style.setProperty('--hole-x', `${pos.x}px`);
+    topLayer.style.setProperty('--hole-y', `${pos.y}px`);
+    topLayer.style.setProperty('--hole-r', `${radius}px`);
 
-    // 1. REDRAW TOP SKETCH CANVAS
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.clearRect(0, 0, width, height);
-
-    // Sketch background: dark blue-grey drafting paper
-    ctx.fillStyle = '#141822';
-    ctx.fillRect(0, 0, width, height);
-
-    // Grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-    ctx.lineWidth = 1;
-    const grid = isMobile ? 28 : 36;
-    ctx.beginPath();
-    for (let x = 0; x < width; x += grid) {
-      ctx.moveTo(x, 0); ctx.lineTo(x, height);
-    }
-    for (let y = 0; y < height; y += grid) {
-      ctx.moveTo(0, y); ctx.lineTo(width, y);
-    }
-    ctx.stroke();
-
-    // Draw identical sketch SVG at the exact resting rect of the bottom SVG
-    if (sketchImg.complete && restRect.width > 0) {
-      ctx.drawImage(sketchImg, restRect.left, restRect.top, restRect.width, restRect.height);
-    }
-
-    // 2. CUT HOLE: REALTIME DESTINATION-OUT PUNCH THROUGH SKETCH
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = '#000';
-
-    const baseHoleRadius = isMobile ? 115 : 165;
-    drawLiquidBlob(cursor.x, cursor.y, baseHoleRadius, time, 0);
-
-    drops.forEach((d, idx) => {
-      const dropRadius = isMobile ? d.r * 0.72 : d.r;
-      drawLiquidBlob(d.x, d.y, dropRadius, time, idx + 1);
-
-      const p = idx === 0 ? cursor : drops[idx - 1];
-      const midX = (p.x + d.x) / 2;
-      const midY = (p.y + d.y) / 2;
-      drawLiquidBlob(midX, midY, dropRadius * 0.95, time, idx + 2);
-    });
-
-    // 3. MONSTER BOTTOM POP-UP TRIGGER
-    // When cursor hovers near lower body of monster, pop up in 3D
+    // 3D pop-up trigger when hovering over monster bottom
+    const rect = bottomStage.getBoundingClientRect();
     const isNearBottom = (
-      mouse.x >= restRect.left - 40 &&
-      mouse.x <= restRect.left + restRect.width + 40 &&
-      mouse.y >= restRect.top + restRect.height * 0.45 &&
-      mouse.y <= restRect.top + restRect.height + 60
+      mouse.x >= rect.left - 40 &&
+      mouse.x <= rect.right + 40 &&
+      mouse.y >= rect.top + rect.height * 0.45 &&
+      mouse.y <= rect.bottom + 60
     );
 
     if (isNearBottom) {
-      monsterStage.classList.add('pop-up');
+      bottomStage.classList.add('pop-up');
       ring.style.width = '42px';
       ring.style.height = '42px';
     } else {
-      monsterStage.classList.remove('pop-up');
-      ring.style.width = '28px';
-      ring.style.height = '28px';
+      bottomStage.classList.remove('pop-up');
+      ring.style.width = '32px';
+      ring.style.height = '32px';
     }
 
     requestAnimationFrame(loop);
