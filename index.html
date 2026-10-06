@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monster Reveal - Liquid Hole Mask</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0b0d13;
+    font-family: system-ui, -apple-system, sans-serif;
+    user-select: none;
+  }
+
+  /* Full viewport container */
+  #viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* LAYER 1 (BOTTOM): Full Color Monster Artwork */
+  .layer-bottom {
+    position: absolute;
+    inset: 0;
+    background-color: #ff334b;
+    background-image: radial-gradient(#d11e33 22%, transparent 22%);
+    background-size: 16px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    perspective: 1200px;
+  }
+
+  /* Monster Container & 3D Pop-up */
+  .monster-stage {
+    position: relative;
+    width: min(85vw, 880px);
+    height: min(82vh, 680px);
+    transform-origin: 50% 90%;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.28s ease;
+  }
+
+  .monster-stage.pop-up {
+    transform: translateY(-30px) scale(1.08) rotateX(8deg);
+    filter: drop-shadow(0 35px 30px rgba(0,0,0,0.6));
+  }
+
+  .monster-stage svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* LAYER 2 (TOP): Canvas Sketch Layer */
+  #sketchCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    cursor: none;
+  }
+
+  /* Custom Cursor Ring */
+  #cursorRing {
+    position: fixed;
+    width: 28px;
+    height: 28px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    transition: width 0.2s, height 0.2s;
+  }
+
+  /* Header Badge */
+  .badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    background: #000;
+    border: 2px solid #fff;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    box-shadow: 4px 4px 0 #000;
+    pointer-events: none;
+  }
+
+  .badge span { color: #0df; }
+
+  .hint-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="badge"><span>◆</span> FRAMER / REVEAL YOUR MONSTERS</div>
+<div class="hint-bar">Move cursor to melt sketch • Monster pops up at bottom</div>
+<div id="cursorRing"></div>
+
+<div id="viewport">
+  <!-- BOTTOM LAYER: FULL COLOR MONSTER ART -->
+  <div class="layer-bottom">
+    <div class="monster-stage" id="monsterStage">
+      <svg viewBox="0 0 800 600">
+        <!-- Comic burst background -->
+        <circle cx="400" cy="320" r="230" fill="#ffe600" stroke="#000" stroke-width="8"/>
+        <path d="M400 320 L180 120 M400 320 L620 120 M400 320 L140 320 M400 320 L660 320 M400 320 L240 500 M400 320 L560 500" stroke="#ff8800" stroke-width="14" stroke-dasharray="16 16"/>
+
+        <!-- Monster Body -->
+        <ellipse cx="400" cy="460" rx="145" ry="115" fill="#1e293b" stroke="#000" stroke-width="8"/>
+        <!-- White Belly -->
+        <ellipse cx="400" cy="470" rx="85" ry="80" fill="#f8fafc" stroke="#000" stroke-width="6"/>
+        <circle cx="400" cy="430" r="7" fill="#fbbf24" stroke="#000" stroke-width="2"/>
+        <circle cx="400" cy="468" r="7" fill="#fbbf24" stroke="#000" stroke-width="2"/>
+        <circle cx="400" cy="506" r="7" fill="#fbbf24" stroke="#000" stroke-width="2"/>
+
+        <!-- Sash & Epaulets -->
+        <path d="M315 415 Q400 520 485 495" stroke="#e11d48" stroke-width="24" stroke-linecap="round"/>
+        <ellipse cx="265" cy="420" rx="35" ry="18" fill="#fbbf24" stroke="#000" stroke-width="5"/>
+        <ellipse cx="535" cy="420" rx="35" ry="18" fill="#fbbf24" stroke="#000" stroke-width="5"/>
+
+        <!-- Head & Ears -->
+        <circle cx="400" cy="270" r="110" fill="#0f172a" stroke="#000" stroke-width="8"/>
+        <polygon points="310,210 260,110 360,180" fill="#1e293b" stroke="#000" stroke-width="8"/>
+        <polygon points="490,210 540,110 440,180" fill="#1e293b" stroke="#000" stroke-width="8"/>
+
+        <!-- Bicorne Hat -->
+        <path d="M230 180 Q400 60 570 180 Q400 140 230 180 Z" fill="#0f172a" stroke="#000" stroke-width="9"/>
+        <path d="M270 170 Q400 95 530 170" stroke="#fbbf24" stroke-width="8"/>
+        <circle cx="400" cy="115" r="18" fill="#e11d48" stroke="#000" stroke-width="4"/>
+
+        <!-- Muzzle -->
+        <ellipse cx="400" cy="300" rx="65" ry="42" fill="#ffffff" stroke="#000" stroke-width="6"/>
+        <polygon points="400,280 382,295 418,295" fill="#f43f5e" stroke="#000" stroke-width="4"/>
+
+        <!-- Glowing Eyes -->
+        <ellipse cx="355" cy="250" rx="26" ry="32" fill="#10b981" stroke="#000" stroke-width="6"/>
+        <ellipse cx="445" cy="250" rx="26" ry="32" fill="#10b981" stroke="#000" stroke-width="6"/>
+        <ellipse cx="355" cy="250" rx="7" ry="22" fill="#000"/>
+        <ellipse cx="445" cy="250" rx="7" ry="22" fill="#000"/>
+        <circle cx="348" cy="240" r="7" fill="#fff"/>
+        <circle cx="438" cy="240" r="7" fill="#fff"/>
+
+        <!-- Whiskers -->
+        <line x1="280" y1="290" x2="190" y2="280" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+        <line x1="280" y1="310" x2="180" y2="325" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+        <line x1="520" y1="290" x2="610" y2="280" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+        <line x1="520" y1="310" x2="620" y2="325" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- Smoking Pipe & Smoke -->
+        <path d="M420 315 Q520 360 510 270" fill="none" stroke="#d97706" stroke-width="14" stroke-linecap="round"/>
+        <rect x="490" y="230" width="38" height="46" rx="6" fill="#b45309" stroke="#000" stroke-width="6"/>
+        <circle cx="510" cy="200" r="18" fill="#e2e8f0" stroke="#000" stroke-width="4"/>
+        <circle cx="535" cy="165" r="26" fill="#cbd5e1" stroke="#000" stroke-width="5"/>
+        <circle cx="505" cy="120" r="34" fill="#94a3b8" stroke="#000" stroke-width="6"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- TOP LAYER: CANVASED SKETCH WITH REALTIME LIQUID HOLE CUTOUT -->
+  <canvas id="sketchCanvas"></canvas>
+</div>
+
+<script>
+  /* ponytail: 2D canvas destination-out, upgrade to WebGL shader when 3D ripples needed */
+  const canvas = document.getElementById('sketchCanvas');
+  const ctx = canvas.getContext('2d');
+  const ring = document.getElementById('cursorRing');
+  const monsterStage = document.getElementById('monsterStage');
+
+  let width = 0;
+  let height = 0;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Mouse & Liquid Droplet Springs
+  const mouse = { x: width / 2, y: height / 2 };
+  const cursor = { x: width / 2, y: height / 2 };
+
+  // Trailing droplets: tightened for rounder shape with subtle fluid drag
+  const drops = [
+    { x: width / 2, y: height / 2, r: 120, lag: 0.16 },
+    { x: width / 2, y: height / 2, r: 80,  lag: 0.10 }
+  ];
+
+  window.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    ring.style.left = `${e.clientX}px`;
+    ring.style.top  = `${e.clientY}px`;
+  });
+
+  function lerp(a, b, f) {
+    return a + (b - a) * f;
+  }
+
+  // Draw blueprint / sketch artwork on top canvas
+  function drawSketchArt(cx, cy, s) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(s, s);
+
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 3 / s;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Drafting grid guides
+    ctx.strokeStyle = 'rgba(96, 165, 250, 0.35)';
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.arc(0, 20, 230, 0, Math.PI * 2);
+    ctx.moveTo(0, -280); ctx.lineTo(0, 300);
+    ctx.moveTo(-320, 20); ctx.lineTo(320, 20);
+    ctx.stroke();
+
+    // Sketch Head & Body wireframe
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#93c5fd';
+    ctx.beginPath();
+    ctx.arc(0, -30, 110, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(0, 160, 145, 115, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Hat Sketch
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 4 / s;
+    ctx.beginPath();
+    ctx.moveTo(-170, -120);
+    ctx.quadraticCurveTo(0, -240, 170, -120);
+    ctx.quadraticCurveTo(0, -160, -170, -120);
+    ctx.stroke();
+
+    // Ears
+    ctx.beginPath();
+    ctx.moveTo(-90, -90); ctx.lineTo(-140, -190); ctx.lineTo(-40, -120);
+    ctx.moveTo(90, -90);  ctx.lineTo(140, -190);  ctx.lineTo(40, -120);
+    ctx.stroke();
+
+    // Eyes & Muzzle
+    ctx.beginPath();
+    ctx.ellipse(-45, -50, 26, 32, 0, 0, Math.PI * 2);
+    ctx.ellipse(45, -50, 26, 32, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 65, 42, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Whiskers
+    ctx.beginPath();
+    ctx.moveTo(-120, -10); ctx.lineTo(-210, -20);
+    ctx.moveTo(-120, 10);  ctx.lineTo(-220, 25);
+    ctx.moveTo(120, -10);  ctx.lineTo(210, -20);
+    ctx.moveTo(120, 10);   ctx.lineTo(220, 25);
+    ctx.stroke();
+
+    // Pipe & Smoke
+    ctx.beginPath();
+    ctx.moveTo(20, 15);
+    ctx.quadraticCurveTo(120, 60, 110, -30);
+    ctx.stroke();
+    ctx.strokeRect(90, -70, 38, 46);
+
+    ctx.strokeStyle = 'rgba(147, 197, 253, 0.6)';
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(110, -100, 18, 0, Math.PI * 2);
+    ctx.arc(135, -135, 26, 0, Math.PI * 2);
+    ctx.arc(105, -180, 34, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Draw clean round hole with subtle liquid perimeter tension
+  function drawLiquidBlob(centerX, centerY, baseRadius, time, harmonicSeed) {
+    const points = 36;
+    ctx.beginPath();
+    for (let i = 0; i <= points; i++) {
+      const angle = (i / points) * Math.PI * 2;
+      // Gentle surface tension wobble (3px max)
+      const wobble = Math.sin(angle * 5 + time * 2 + harmonicSeed) * 3.5;
+      const r = baseRadius + wobble;
+      const x = centerX + Math.cos(angle) * r;
+      const y = centerY + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  let time = 0;
+
+  function loop() {
+    time += 0.035;
+
+    // Smooth cursor follow
+    cursor.x = lerp(cursor.x, mouse.x, 0.22);
+    cursor.y = lerp(cursor.y, mouse.y, 0.22);
+
+    // Droplet springs trailing behind
+    let prev = cursor;
+    drops.forEach(d => {
+      d.x = lerp(d.x, prev.x, d.lag);
+      d.y = lerp(d.y, prev.y, d.lag);
+      prev = d;
+    });
+
+    // 1. CLEAR & REDRAW TOP SKETCH CANVAS
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, width, height);
+
+    // Sketch background: dark blue-grey drafting paper
+    ctx.fillStyle = '#141822';
+    ctx.fillRect(0, 0, width, height);
+
+    // Drafting grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.lineWidth = 1;
+    const grid = 36;
+    ctx.beginPath();
+    for (let x = 0; x < width; x += grid) {
+      ctx.moveTo(x, 0); ctx.lineTo(x, height);
+    }
+    for (let y = 0; y < height; y += grid) {
+      ctx.moveTo(0, y); ctx.lineTo(width, y);
+    }
+    ctx.stroke();
+
+    // Draw the top sketch artwork matching monster center
+    const rect = monsterStage.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const scale = Math.min(rect.width / 800, rect.height / 600);
+    drawSketchArt(cx, cy - 20, scale);
+
+    // 2. CUT HOLE: REALTIME DESTINATION-OUT PUNCH THROUGH SKETCH
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = '#000';
+
+    // Main round hole (165px radius)
+    drawLiquidBlob(cursor.x, cursor.y, 165, time, 0);
+
+    // Subtle drag droplet to keep slight fluid inertia without breaking circularity
+    drops.forEach((d, idx) => {
+      drawLiquidBlob(d.x, d.y, d.r, time, idx + 1);
+
+      const p = idx === 0 ? cursor : drops[idx - 1];
+      const midX = (p.x + d.x) / 2;
+      const midY = (p.y + d.y) / 2;
+      drawLiquidBlob(midX, midY, d.r * 0.95, time, idx + 2);
+    });
+
+    // 3. MONSTER BOTTOM POP-UP TRIGGER
+    // When cursor hovers near lower body of monster, pop up in 3D
+    const isNearBottom = (
+      mouse.x >= rect.left - 40 &&
+      mouse.x <= rect.right + 40 &&
+      mouse.y >= rect.top + rect.height * 0.45 &&
+      mouse.y <= rect.bottom + 60
+    );
+
+    if (isNearBottom) {
+      monsterStage.classList.add('pop-up');
+      ring.style.width = '42px';
+      ring.style.height = '42px';
+    } else {
+      monsterStage.classList.remove('pop-up');
+      ring.style.width = '28px';
+      ring.style.height = '28px';
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
+
+</body>
+</html>
